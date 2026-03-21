@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聚合搜索 · 香港记录插入优化</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 8px;
+            color: #333;
+            font-size: 9px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            height: calc(100vh - 16px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 1.6rem;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .search-section {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        
+        .search-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        .compact-group {
+            flex: 0.8;
+        }
+        
+        .form-group input[type="text"] {
+            padding: 6px 8px;
+            min-height: unset;
+        }
+        
+        .compact-group input[type="text"] {
+            padding: 5px 10px;
+            min-height: 28px;
+            line-height: 1.3;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex: 0.6;
+        }
+        
+        button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .search-btn {
+            background: #3498db;
+            color: white;
+        }
+        
+        .search-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
+        }
+        
+        .save-btn {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .save-btn:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(46, 204, 113, 0.3);
+        }
+        
+        .results-section {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .results-container {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .result-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: #f8f9fa;
+            padding: 8px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .panel-header.api1 .panel-title {
+            color: #3498db;
+        }
+        
+        .panel-header.api2 .panel-title {
+            color: #e74c3c;
+        }
+        
+        .count-badge {
+            background: #e9ecef;
+            color: #6c757d;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .panel-header.api1 .count-badge {
+            background: #3498db;
+            color: white;
+        }
+        
+        .panel-header.api2 .count-badge {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        
+        .section-title i {
+            color: #3498db;
+        }
+        
+        .table-container {
+            flex: 1;
+            overflow: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 6px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #e9ecef;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 6px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .score-cell {
+            font-weight: 600;
+            color: #e74c3c;
+            width: 60px;
+        }
+        
+        .image-cell {
+            width: 40px;
+            text-align: center;
+        }
+        
+        .name-cell, .hitreason-cell, .hitreasons-cell {
+            color: #2c3e50;
+        }
+        
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .list-item {
+            padding: 2px 3px;
+            border-radius: 2px;
+            background: #f8f9fa;
+            line-height: 1.2;
+        }
+        
+        .company-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .company-logo {
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #7f8c8d;
+        }
+        
+        .company-name {
+            flex: 1;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 1px 2px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+        
+        .hk-insert {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #bdc3c7;
+        }
+        
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 8px;
+            right: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-12px);
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.success {
+            background: #2ecc71;
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        .notification.info {
+            background: #3498db;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 8px;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .search-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .results-container {
+                flex-direction: column;
+            }
+            
+            .button-group {
+                width: 100%;
+            }
+            
+            th, td {
+                padding: 4px;
+                font-size: 7px;
+            }
+            
+            .company-logo {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .panel-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>聚合搜索 · 香港记录插入优化</h2>
+        </header>
+        
+        <section class="search-section">
+            <div class="search-row">
+                <div class="form-group">
+                    <label for="searchTerm"><i class="fas fa-search"></i> 搜索词</label>
+                    <input type="text" id="searchTerm" autofocus placeholder="请输入搜索词...">
+                </div>
+
+                <div class="form-group compact-group">
+                    <label for="extraParams1"><i class="fas fa-cog"></i> 测试接口参数</label>
+                    <input type="text" id="extraParams1" placeholder='JSON格式'
+                        value='{"filter":"{\"hst\":[5]}","pageSize": 40}'>
+                </div>
+
+                <div class="form-group compact-group">
+                    <label for="extraParams2"><i class="fas fa-cog"></i> 对比接口参数</label>
+                    <input type="text" id="extraParams2" placeholder='JSON格式'
+                        value='{"filter":"{\"hst\":[3,5]}","pageSize": 40}'>
+                </div>
+
+                <div class="button-group">
+                    <button class="search-btn" type="submit" id="searchBtn">
+                        <i class="fas fa-search"></i> 查询
+                    </button>
+                </div>
+            </div>
+            
+            <div class="search-row" style="margin-top: 10px;">
+                <div class="form-group compact-group">
+                    <label for="customHeaders1"><i class="fas fa-heading"></i> 测试接口请求头</label>
+                    <input type="text" id="customHeaders1" placeholder='JSON格式，例如: {"x-custom-header": "value"}'
+                           value='{"x-request-strategy-custom-ab-hk-search-code": "EXPERIMENT_A","x-request-strategy-custom-ab-search-group-code": "EXPERIMENT_A"}'>
+                </div>
+
+                <div class="form-group compact-group">
+                    <label for="customHeaders2"><i class="fas fa-heading"></i> 对比接口请求头</label>
+                    <input type="text" id="customHeaders2" placeholder='JSON格式，例如: {"x-custom-header": "value"}'
+                           value='{"x-request-strategy-custom-ab-hk-search-code": "EXPERIMENT_A","x-request-strategy-custom-ab-search-group-code": "EXPERIMENT_A"}'>
+                </div>
+
+                <div class="form-group compact-group">
+                    <label for="apiUrls"><i class="fas fa-link"></i> API URL配置</label>
+                    <input type="text" id="apiUrls" placeholder='JSON格式，例如: {"url1": "...", "url2": "..."}'>
+                </div>
+            </div>
+        </section>
+        
+        <script>
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBtn').click();
+            }
+        });
+        </script>
+
+        <section class="results-section">
+            <div class="results-container">
+                <div class="result-panel">
+                    <div class="panel-header api1">
+                        <div class="panel-title">
+                            <i class="fas fa-database"></i> 测试接口结果
+                        </div>
+                        <div class="count-display">
+                            <span class="count-badge" id="count1">count: 0</span>
+                        </div>
+                    </div>
+                    <div class="table-container" id="resultsTable1">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>暂无数据，请输入搜索词并点击查询</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-panel">
+                    <div class="panel-header api2">
+                        <div class="panel-title">
+                            <i class="fas fa-server"></i> 对比接口结果
+                        </div>
+                        <div class="count-display">
+                            <span class="count-badge" id="count2">count: 0</span>
+                        </div>
+                    </div>
+                    <div class="table-container" id="resultsTable2">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>暂无数据，请输入搜索词并点击查询</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>© 2025 搜索与结果管理系统 | 支持香港记录插入 (红色显示 · 索引0视为1)</p>
+        </footer>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== 配置与工具函数 ====================
+        const DEFAULT_API_CONFIG = {
+            url1: 'http://nodejs-qcc-backend-data.sit.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true',
+            url2: 'http://nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true'
+        };
+        
+        const SECRET_KEY = 'e7e3096d-7dd0-4ddd-98d3-0b2b77996f6e';
+        
+        // DOM 元素
+        const searchBtn = document.getElementById('searchBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const searchTermInput = document.getElementById('searchTerm');
+        const extraParams1Input = document.getElementById('extraParams1');
+        const extraParams2Input = document.getElementById('extraParams2');
+        const customHeaders1Input = document.getElementById('customHeaders1');
+        const customHeaders2Input = document.getElementById('customHeaders2');
+        const apiUrlsInput = document.getElementById('apiUrls');
+        const resultsTable1 = document.getElementById('resultsTable1');
+        const resultsTable2 = document.getElementById('resultsTable2');
+        const notification = document.getElementById('notification');
+        const count1 = document.getElementById('count1');
+        const count2 = document.getElementById('count2');
+        
+        let currentResults1 = [];
+        let currentResults2 = [];
+
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        function generateTimestamp() {
+            return Math.floor(Date.now() / 1000).toString().substring(0, 10);
+        }
+        
+        function calculateToken() {
+            const timestamp = generateTimestamp();
+            const data = "metersphere" + timestamp + SECRET_KEY;
+            return CryptoJS.MD5(data).toString();
+        }
+        
+        function buildBaseHeaders() {
+            return {
+                'x-request-timestamp': generateTimestamp(),
+                'x-request-access-token': calculateToken(),
+                'x-request-from-app-name': 'metersphere',
+                'Content-Type': 'application/json'
+            };
+        }
+        
+        function mergeHeaders(baseHeaders, customHeaders) {
+            return {...baseHeaders, ...customHeaders};
+        }
+        
+        function buildRequestData(searchTerm, extraParams = {}) {
+            return {
+                searchKey: searchTerm,
+                reasonType: 1,
+                filter: "{\"hst\":[5]}",
+                "withNewFields": 1,
+                pageSize: 40,
+                ...extraParams
+            };
+        }
+        
+        async function callApi(url, headers, data) {
+            try {
+                console.log('调用API:', url);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP错误! 状态码: ${response.status}`);
+                }
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('API调用失败:', error);
+                throw error;
+            }
+        }
+
+        // ========== 转换单个条目 (携带香港标记) ==========
+        function convertResultItem(item, isHK = false) {
+            let nameStr = item.Name || 'NA';
+            if (item.ShortStatus) nameStr += '【' + item.ShortStatus + '】';
+            if (item.RegistCapi) nameStr += item.RegistCapi;
+            if (isHK) {
+                nameStr += ' 【插入香港记录】';   // 标记
+            }
+
+            return {
+                score: [item.ApiScore || '0'],
+                imageUrl: item.ImageUrl || null,
+                name: [nameStr],
+                hitreason: [JSON.stringify(item.HitReason || 'NA')],
+                tags: (item.TagsInfoV2 || []).map(tag => JSON.stringify(tag.Name || 'NA'))
+            };
+        }
+
+        // ========== 处理API返回数据 (增强版：支持无Result但HKCompanies存在且HKIndex为空时直接展示) ==========
+        function processApiData(apiResult) {
+            // 基础结果数组 (可能为空)
+            const baseResults = (apiResult && apiResult.Result && Array.isArray(apiResult.Result)) 
+                ? apiResult.Result.map(item => convertResultItem(item, false)) 
+                : [];
+
+            // 香港公司列表
+            let hkItems = [];
+            if (apiResult && apiResult.HKCompanies) {
+                if (Array.isArray(apiResult.HKCompanies)) {
+                    hkItems = apiResult.HKCompanies.map(item => convertResultItem(item, true));
+                } else {
+                    hkItems = [convertResultItem(apiResult.HKCompanies, true)];
+                }
+            }
+
+            let finalResults = [...baseResults];
+            const rawIndex = apiResult ? apiResult.HKIndex : undefined;
+            const hasHK = hkItems.length > 0;
+
+            // 情况1: 没有基础结果、有香港公司、且HKIndex为空 (undefined/null) —— 直接展示香港公司
+            if (baseResults.length === 0 && hasHK && (rawIndex === undefined || rawIndex === null)) {
+                finalResults = hkItems;
+            }
+            // 情况2: 有香港公司并且提供了HKIndex (无论基础结果是否为空) —— 按照索引插入
+            else if (hasHK && rawIndex !== undefined && rawIndex !== null) {
+                let index = parseInt(rawIndex, 10);
+                // 索引0视为1 (需求)
+                if (index <= 0) index = 1;
+                let insertPos = Math.min(index, baseResults.length);
+                finalResults.splice(insertPos, 0, ...hkItems);
+            }
+            // 其他情况: 保持 baseResults (可能包含或不包含香港公司，取决于原始数据)
+
+            const totalRecords = (apiResult && apiResult.Paging) ? apiResult.Paging.TotalRecords : 0;
+            return {
+                results: finalResults,
+                totalRecords: totalRecords
+            };
+        }
+
+        // ========== 渲染表格（带红色香港标记） ==========
+        function renderResultsTable(results, tableElement) {
+            if (results.length === 0) {
+                tableElement.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>没有找到相关结果</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="score-cell">分值</th>
+                            <th class="image-cell">图片</th>
+                            <th class="name-cell">企业名</th>
+                            <th class="hitreason-cell">HitReason</th>
+                            <th class="hitreasons-cell">tags</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            results.forEach(item => {
+                tableHTML += `
+                    <tr>
+                        <td class="score-cell">
+                            <div class="list-container">
+                `;
+                
+                if (item.score && item.score.length > 0) {
+                    item.score.forEach(scoreItem => {
+                        tableHTML += `<div class="list-item">${scoreItem}</div>`;
+                    });
+                }
+                
+                tableHTML += `
+                            </div>
+                        </td>
+                        <td class="image-cell">
+                            <div class="list-container">
+                `;
+                
+                if (item.imageUrl) {
+                    tableHTML += `
+                        <div class="list-item">
+                            <img src="${item.imageUrl}" class="company-logo" onerror="this.onerror=null; this.src=''; this.innerHTML='<i class=\\'fas fa-building\\'></i>';" alt="公司logo">
+                        </div>
+                    `;
+                } else {
+                    tableHTML += `
+                        <div class="list-item">
+                            <div class="company-logo"><i class="fas fa-building"></i></div>
+                        </div>
+                    `;
+                }
+                
+                tableHTML += `
+                            </div>
+                        </td>
+                        <td class="name-cell">
+                            <div class="list-container">
+                `;
+                
+                if (item.name && item.name.length > 0) {
+                    item.name.forEach(nameItem => {
+                        // 检查是否包含香港标记，添加红色样式
+                        const isHK = nameItem.includes('【插入香港记录】');
+                        const nameContent = isHK 
+                            ? nameItem.replace('【插入香港记录】', '<span class="hk-insert">【插入香港记录】</span>')
+                            : nameItem;
+                        tableHTML += `
+                            <div class="list-item company-item">
+                                <div class="company-name">${nameContent}</div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                tableHTML += `
+                            </div>
+                        </td>
+                        <td class="hitreason-cell">
+                            <div class="list-container">
+                `;
+                
+                if (item.hitreason && item.hitreason.length > 0) {
+                    item.hitreason.forEach(reason => {
+                        try {
+                            const parsed = JSON.parse(reason);
+                            tableHTML += `<div class="list-item">${parsed.Field}:${parsed.Value}</div>`;
+                        } catch {
+                            tableHTML += `<div class="list-item">${reason}</div>`;
+                        }
+                    });
+                }
+                
+                tableHTML += `
+                            </div>
+                        </td>
+                        <td class="hitreasons-cell">
+                            <div class="list-container">
+                `;
+                
+                if (item.tags && item.tags.length > 0) {
+                    item.tags.forEach(tag => {
+                        const cleanTag = tag.replace(/^"+|"+$/g, '');
+                        tableHTML += `<div class="list-item">${cleanTag}</div>`;
+                    });
+                }
+                tableHTML += `
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            tableElement.innerHTML = tableHTML;
+            
+            // 处理高亮 <em> 标签
+            highlightAllElements(tableElement);
+        }
+        
+        function highlightAllElements(tableElement) {
+            const listItems = tableElement.querySelectorAll('.list-item');
+            listItems.forEach(item => {
+                item.innerHTML = item.innerHTML.replace(
+                    /<em>(.*?)<\/em>/g, 
+                    '<span class="highlight">$1</span>'
+                );
+            });
+        }
+
+        // ========== 搜索主流程 ==========
+        async function searchBothApis(searchTerm, paramsObj1, paramsObj2, headersObj1, headersObj2, apiConfig) {
+            resultsTable1.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>正在调用测试接口...</p>
+                </div>
+            `;
+            resultsTable2.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>正在调用对比接口...</p>
+                </div>
+            `;
+            
+            count1.textContent = 'count: 0';
+            count2.textContent = 'count: 0';
+            
+            try {
+                const baseHeaders = buildBaseHeaders();
+                const headers1 = mergeHeaders(baseHeaders, headersObj1);
+                const headers2 = mergeHeaders(baseHeaders, headersObj2);
+                
+                const data1 = buildRequestData(searchTerm, paramsObj1);
+                const data2 = buildRequestData(searchTerm, paramsObj2);
+                
+                const [result1, result2] = await Promise.all([
+                    callApi(apiConfig.url1, headers1, data1),
+                    callApi(apiConfig.url2, headers2, data2)
+                ]);
+                
+                // 处理数据（包含香港记录插入优化）
+                const processedData1 = processApiData(result1);
+                const processedData2 = processApiData(result2);
+                
+                currentResults1 = processedData1.results;
+                currentResults2 = processedData2.results;
+                
+                // 更新计数：显示实际条数 + (原始总数)
+                count1.textContent = `count: ${processedData1.results.length} (原:${processedData1.totalRecords})`;
+                count2.textContent = `count: ${processedData2.results.length} (原:${processedData2.totalRecords})`;
+                
+                renderResultsTable(currentResults1, resultsTable1);
+                renderResultsTable(currentResults2, resultsTable2);
+                
+                showNotification(`搜索完成，测试接口返回 ${currentResults1.length} 条，对比接口返回 ${currentResults2.length} 条`, 'success');
+                
+            } catch (error) {
+                console.error('搜索失败:', error);
+                showNotification(`搜索失败: ${error.message}`, 'error');
+                
+                resultsTable1.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>测试接口调用失败</p>
+                        <p style="font-size: 0.8rem; margin-top: 5px;">${error.message}</p>
+                    </div>
+                `;
+                resultsTable2.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>对比接口调用失败</p>
+                        <p style="font-size: 0.8rem; margin-top: 5px;">${error.message}</p>
+                    </div>
+                `;
+                
+                count1.textContent = 'count: 0';
+                count2.textContent = 'count: 0';
+            }
+        }
+
+        // ========== 事件监听 ==========
+        searchBtn.addEventListener('click', async function() {
+            const searchTerm = searchTermInput.value.trim();
+            const extraParams1 = extraParams1Input.value.trim();
+            const extraParams2 = extraParams2Input.value.trim();
+            const customHeaders1 = customHeaders1Input.value.trim();
+            const customHeaders2 = customHeaders2Input.value.trim();
+            const apiUrls = apiUrlsInput.value.trim();
+
+            if (!searchTerm) {
+                showNotification('请输入搜索词', 'error');
+                return;
+            }
+
+            let paramsObj1 = {}, paramsObj2 = {};
+            if (extraParams1) {
+                try { paramsObj1 = JSON.parse(extraParams1); } catch { showNotification('测试接口参数格式错误', 'error'); return; }
+            }
+            if (extraParams2) {
+                try { paramsObj2 = JSON.parse(extraParams2); } catch { showNotification('对比接口参数格式错误', 'error'); return; }
+            }
+
+            let headersObj1 = {}, headersObj2 = {};
+            if (customHeaders1) {
+                try { headersObj1 = JSON.parse(customHeaders1); } catch { showNotification('测试接口请求头格式错误', 'error'); return; }
+            }
+            if (customHeaders2) {
+                try { headersObj2 = JSON.parse(customHeaders2); } catch { showNotification('对比接口请求头格式错误', 'error'); return; }
+            }
+
+            let apiConfig = {...DEFAULT_API_CONFIG};
+            if (apiUrls) {
+                try {
+                    const parsedUrls = JSON.parse(apiUrls);
+                    apiConfig = {...apiConfig, ...parsedUrls};
+                } catch { showNotification('API URL配置格式错误', 'error'); return; }
+            }
+
+            await searchBothApis(searchTerm, paramsObj1, paramsObj2, headersObj1, headersObj2, apiConfig);
+        });
+
+        // 保存按钮（保留但注释，不做修改）
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                showNotification('保存功能已禁用（演示）', 'info');
+            });
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 可放置初始化逻辑
+        });
+    </script>
+</body>
+</html>

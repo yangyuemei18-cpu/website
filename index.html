@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>测试工坊 · 聚合导航中心</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fc 0%, #e9eef5 100%);
+            min-height: 100vh;
+            padding: 24px 20px;
+        }
+
+        /* 主容器 */
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 头部区域 */
+        .hero {
+            margin-bottom: 32px;
+            text-align: left;
+        }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(130deg, #1e2b3c, #2c4c6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hero h1 i {
+            background: none;
+            color: #2c6e9e;
+            font-size: 2rem;
+        }
+
+        .sub {
+            color: #4a627a;
+            margin-top: 8px;
+            font-size: 1rem;
+            border-left: 4px solid #3b82f6;
+            padding-left: 16px;
+            font-weight: 450;
+        }
+
+        /* 统计栏 */
+        .stats-bar {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(2px);
+            border-radius: 28px;
+            padding: 12px 20px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stats-badge {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            background: white;
+            padding: 5px 14px;
+            border-radius: 40px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            color: #1e3a5f;
+        }
+
+        .stat i {
+            font-size: 0.9rem;
+            color: #2c6e9e;
+        }
+
+        .add-quick {
+            background: #1e2f3c;
+            color: white;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-quick:hover {
+            background: #0f2b3b;
+            transform: scale(0.98);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 卡片网格 */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        /* 卡片样式 */
+        .tool-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(0px);
+            border-radius: 28px;
+            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.12);
+            transition: all 0.25s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(59,130,246,0.12);
+            position: relative;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 22px 32px -14px rgba(0, 0, 0, 0.2);
+            border-color: rgba(59,130,246,0.3);
+        }
+
+        .card-content {
+            padding: 20px 22px 22px 22px;
+            flex: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: #eef3fc;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: #2c6e9e;
+            transition: 0.2s;
+        }
+
+        .tool-card:hover .card-icon {
+            background: #e0ebf5;
+            transform: scale(0.96);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.2px;
+        }
+
+        .card-desc {
+            color: #475569;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            margin: 12px 0 18px 0;
+            min-height: 60px;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            border-top: 1px solid #edf2f7;
+            padding-top: 16px;
+        }
+
+        .open-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #1e4b6e;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .open-btn i {
+            font-size: 0.75rem;
+        }
+
+        .open-btn:hover {
+            background: #2c6e9e;
+            color: white;
+            box-shadow: 0 4px 10px rgba(44,110,158,0.2);
+        }
+
+        .delete-card {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 6px 10px;
+            border-radius: 30px;
+            transition: 0.2s;
+            opacity: 0.6;
+        }
+
+        .delete-card:hover {
+            color: #e53e3e;
+            background: #fff0f0;
+            opacity: 1;
+        }
+
+        .builtin-badge {
+            font-size: 0.65rem;
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 20px;
+            color: #475569;
+            margin-left: 8px;
+            font-weight: normal;
+        }
+
+        /* 空状态 */
+        .empty-custom {
+            grid-column: 1 / -1;
+            text-align: center;
+            background: #f8fafc;
+            border-radius: 40px;
+            padding: 32px;
+            color: #5b6e8c;
+            border: 1px dashed #cbd5e1;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+ backdrop-filter: blur(3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal {
+            background: white;
+            width: 90%;
+            max-width: 480px;
+            border-radius: 32px;
+            padding: 28px 26px;
+            box-shadow: 0 30px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal h3 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: #0f2b3a;
+        }
+
+        .modal input, .modal textarea {
+            width: 100%;
+            padding: 12px 14px;
+            margin: 12px 0 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            background: #fefefe;
+            transition: 0.2s;
+        }
+
+        .modal input:focus, .modal textarea:focus {
+            border-color: #2c6e9e;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(44,110,158,0.2);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-buttons button {
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-cancel {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .modal-confirm {
+            background: #1e4b6e;
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #5e6f8d;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding-top: 24px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 16px;
+            }
+            .hero h1 {
+                font-size: 1.6rem;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+            .stats-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="hero">
+        <h1>
+            <i class="fas fa-compass"></i> 测试工坊 · 聚合中心
+        </h1>
+        <div class="sub">搜索对比 · 接口调试 · JSON智能比对 | 一站式测试入口</div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stats-badge">
+            <div class="stat"><i class="fas fa-layer-group"></i> <span id="totalCardsCount">0</span> 个测试工具</div>
+            <div class="stat"><i class="fas fa-code-branch"></i> 内置核心 · 可扩展</div>
+        </div>
+        <button class="add-quick" id="openAddModalBtn">
+            <i class="fas fa-plus-circle"></i> 新增测试页面
+        </button>
+    </div>
+
+    <!-- 卡片容器 -->
+    <div id="cardsContainer" class="cards-grid"></div>
+    <footer>
+        <i class="fas fa-cubes"></i> 点击卡片按钮打开对应测试工具 · 支持动态添加新页面（本地存储） · 为测试提效而生
+    </footer>
+</div>
+
+<!-- 新增页面模态框 -->
+<div id="addModal" class="modal-overlay">
+    <div class="modal">
+        <h3><i class="fas fa-plus-circle"></i> 添加新的测试入口</h3>
+        <input type="text" id="newPageTitle" placeholder="页面标题 (例: 企业图谱对比)" autocomplete="off">
+        <textarea id="newPageDesc" rows="2" placeholder="简短描述 (展示功能亮点)"></textarea>
+        <input type="text" id="newPageUrl" placeholder="相对路径或URL (例: 新工具.html 或 https://...)" autocomplete="off">
+        <div class="modal-buttons">
+            <button class="modal-cancel" id="cancelModalBtn">取消</button>
+            <button class="modal-confirm" id="confirmAddBtn">确认添加</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // 内置页面数据 (基于提供的6个测试页面，文件名需与实际一致)
+    // 若文件名有差异，可在此处修改路径，确保与目录下的文件匹配
+    // --------------------------------------------------------------
+    const BUILTIN_PAGES = [
+        {
+            id: "builtin_1",
+            title: "聚合搜索对比 · 香港优化",
+            description: "双接口聚合搜索，支持香港记录智能插入（索引优化+红色标记），对比搜索参数效果。",
+            icon: "fa-chart-line",
+            url: "搜索-聚合搜索对比测试.html",
+            builtin: true
+        },
+        {
+            id: "builtin_2",
+            title: "搜索下拉 新版 VS 旧版",
+            description: "新版searchrecommendation 与 旧版结构对比，直观展示差异，支持动态请求头。",
+            icon: "fa-code-branch",
+            url: "搜索-搜索下拉新版-旧版对比测试.html",
+            builtin: true
+        },
+        {
+            id: "builtin_3",
+            title: "搜索下拉 · 双新版对比",
+            description: "同一新版接口双端对比（不同参数/环境），精准分析新版迭代效果。",
+            icon: "fa-code-compare",
+            url: "搜索-搜索下拉-新版对比测试.html",
+            builtin: true
+        },
+        {
+            id: "builtin_4",
+            title: "人员搜索 · 双接口对比",
+            description: "人员信息专项检索，对比SIT/PROD接口返回，支持地区限制参数。",
+            icon: "fa-user-group",
+            url: "搜索-人员搜索对比测试.html",
+            builtin: true
+        },
+        {
+            id: "builtin_5",
+            title: "JSON 炫彩渲染 · 原始视图",
+            description: "接口返回JSON完整高亮、折叠/展开、一键复制，极速调试数据结构。",
+            icon: "fa-file-code",
+            url: "接口返回内容json渲染显示.html",
+            builtin: true
+        },
+        {
+            id: "builtin_6",
+            title: "智能 JSON 差异对比",
+            description: "并排对比双接口JSON，新增/删除/修改高亮显示，差异统计一目了然。",
+            icon: "fa-chart-simple",
+            url: "接口返回内容json对比.html",
+            builtin: true
+        }
+    ];
+
+    // localStorage 自定义页面存储 key
+    const STORAGE_KEY = "custom_test_pages";
+
+    // 当前所有页面 (内置 + 自定义)
+    let allPages = [];
+
+    // DOM 元素
+    const cardsContainer = document.getElementById('cardsContainer');
+    const totalCardsSpan = document.getElementById('totalCardsCount');
+    const openModalBtn = document.getElementById('openAddModalBtn');
+    const modalOverlay = document.getElementById('addModal');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const confirmAddBtn = document.getElementById('confirmAddBtn');
+    const newPageTitle = document.getElementById('newPageTitle');
+    const newPageDesc = document.getElementById('newPageDesc');
+    const newPageUrl = document.getElementById('newPageUrl');
+
+    // 辅助: 保存自定义页面到 localStorage
+    function saveCustomPages(customList) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(customList));
+    }
+
+    // 加载自定义页面
+    function loadCustomPages() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return [];
+        try {
+            const parsed = JSON.parse(stored);
+            // 确保每个自定义页面有必要的字段
+            return parsed.filter(p => p && typeof p.title === 'string' && p.url).map(p => ({
+                ...p,
+                builtin: false,
+                id: p.id || `custom_${Date.now()}_${Math.random()}`
+            }));
+        } catch(e) {
+            console.warn("加载自定义页面失败", e);
+            return [];
+        }
+    }
+
+    // 渲染所有卡片 (内置+自定义)
+    function renderCards() {
+        // 合并数据: 先展示内置，后展示自定义 (保持顺序)
+        const builtinList = BUILTIN_PAGES.map(p => ({ ...p, builtin: true }));
+        const customList = loadCustomPages();
+        allPages = [...builtinList, ...customList];
+
+        // 更新总数显示
+        totalCardsSpan.innerText = allPages.length;
+
+        if (allPages.length === 0) {
+            cardsContainer.innerHTML = `<div class="empty-custom"><i class="fas fa-folder-open"></i> 暂无工具，点击「新增测试页面」添加入口</div>`;
+            return;
+        }
+
+        let cardsHTML = '';
+        for (let page of allPages) {
+            // 选择合适图标 (如果内置有自定义icon则用，否则根据标题给默认)
+            let iconClass = page.icon || "fa-puzzle-piece";
+            // 安全处理可能不存在icon
+            const displayIcon = iconClass.startsWith('fa') ? iconClass : 'fa-window-maximize';
+            const isBuiltin = page.builtin === true;
+            const deleteMarkup = !isBuiltin ? `<button class="delete-card" data-id="${page.id}" title="移除该入口"><i class="fas fa-trash-alt"></i></button>` : '';
+
+            cardsHTML += `
+                <div class="tool-card" data-url="${escapeHtml(page.url)}" data-title="${escapeHtml(page.title)}" data-id="${page.id}" data-builtin="${isBuiltin}">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="fas ${displayIcon}"></i></div>
+                            <div class="card-title">${escapeHtml(page.title)}${!isBuiltin ? '<span class="builtin-badge">自定义</span>' : '<span class="builtin-badge" style="background:#e2f0ff;">官方</span>'}</div>
+                        </div>
+                        <div class="card-desc">${escapeHtml(page.description || '无详细描述，点击打开体验')}</div>
+                        <div class="card-meta">
+                            <button class="open-btn" data-url="${escapeHtml(page.url)}"><i class="fas fa-external-link-alt"></i> 打开工具</button>
+                            ${deleteMarkup}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        cardsContainer.innerHTML = cardsHTML;
+
+        // 绑定打开事件 (事件委托)
+        document.querySelectorAll('.open-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const url = btn.getAttribute('data-url');
+                if (url) {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                } else {
+                    showNotification('页面地址无效，请检查配置', 'error');
+                }
+            });
+        });
+
+        // 删除自定义卡片事件
+        document.querySelectorAll('.delete-card').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const cardDiv = btn.closest('.tool-card');
+                const pageId = cardDiv?.getAttribute('data-id');
+                if (!pageId) return;
+                deleteCustomPageById(pageId);
+            });
+        });
+    }
+
+    // 删除自定义页面
+    function deleteCustomPageById(pageId) {
+        let customPages = loadCustomPages();
+        const filtered = customPages.filter(p => p.id !== pageId);
+        if (filtered.length === customPages.length) {
+            showNotification('未找到该页面或为内置页面不可删除', 'warning');
+            return;
+        }
+        saveCustomPages(filtered);
+        renderCards();
+        showNotification('已移除自定义测试页面', 'success');
+    }
+
+    // 添加新的自定义页面
+    function addCustomPage(title, description, url) {
+        if (!title.trim()) {
+            showNotification('页面标题不能为空', 'error');
+            return false;
+        }
+        if (!url.trim()) {
+            showNotification('请填写页面路径或URL', 'error');
+            return false;
+        }
+        // 简单URL格式校验 (允许相对路径或http开头)
+        let finalUrl = url.trim();
+        // 防止 javascript: 伪协议
+        if (finalUrl.toLowerCase().startsWith('javascript:')) {
+            showNotification('URL不合法', 'error');
+            return false;
+        }
+        const customPages = loadCustomPages();
+        // 避免重复添加完全相同的url? 简单去重提醒
+        const exists = customPages.some(p => p.url === finalUrl);
+        if (exists) {
+            showNotification('该URL已存在，请勿重复添加', 'warning');
+            return false;
+        }
+        const newPage = {
+            id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            title: title.trim(),
+            description: description.trim() || '自定义测试工具，点击即可体验',
+            url: finalUrl,
+            icon: "fa-plus-circle",
+            builtin: false,
+        };
+        customPages.push(newPage);
+        saveCustomPages(customPages);
+        renderCards();
+        return true;
+    }
+
+    // 辅助: 转义HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // 简易通知 (悬浮)
+    let notifTimeout = null;
+    function showNotification(message, type = 'info') {
+        const existingNotif = document.querySelector('.global-notify');
+        if (existingNotif) existingNotif.remove();
+        const notif = document.createElement('div');
+        notif.className = 'global-notify';
+        notif.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${type === 'error' ? '#e53e3e' : (type === 'warning' ? '#ed8936' : '#2c6e9e')};
+            color: white;
+            padding: 8px 24px;
+            border-radius: 60px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            z-index: 1100;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            white-space: nowrap;
+        `;
+        notif.textContent = message;
+        document.body.appendChild(notif);
+        if (notifTimeout) clearTimeout(notifTimeout);
+        notifTimeout = setTimeout(() => {
+            if (notif) notif.remove();
+        }, 2600);
+    }
+
+    // 模态框控制
+    function openModal() {
+        modalOverlay.classList.add('active');
+        newPageTitle.value = '';
+        newPageDesc.value = '';
+        newPageUrl.value = '';
+        newPageTitle.focus();
+    }
+
+    function closeModal() {
+        modalOverlay.classList.remove('active');
+    }
+
+    function handleAddPage() {
+        const title = newPageTitle.value.trim();
+        const desc = newPageDesc.value.trim();
+        const url = newPageUrl.value.trim();
+        if (!title) {
+            showNotification('请输入页面标题', 'error');
+            return;
+        }
+        if (!url) {
+            showNotification('请输入正确的页面路径或URL', 'error');
+            return;
+        }
+        const success = addCustomPage(title, desc, url);
+        if (success) {
+            closeModal();
+            showNotification(`✨ 成功添加「${title}”`, 'success');
+        }
+    }
+
+    // 提供外部演示：由于内置页面可能文件名与实际不完全一致，添加友好提醒
+    function preflightCheck() {
+        // 此函数仅用于提示用户确保文件名匹配，无实际阻塞
+        console.log("聚合入口已加载，请确保以下文件与index.html同级目录存在：",
+            BUILTIN_PAGES.map(p => p.url).join(', '));
+        // 可选: 不干扰界面，仅在控制台提醒
+    }
+
+    // 事件绑定
+    openModalBtn.addEventListener('click', openModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+    confirmAddBtn.addEventListener('click', handleAddPage);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+    });
+
+    // 按ESC关闭模态框
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    // 初始化渲染
+    renderCards();
+    preflightCheck();
+
+    // 附加：卡片点击整体可以快速打开 (用户点击卡片空白区域打开)
+    cardsContainer.addEventListener('click', (e) => {
+        // 避免点到删除按钮或打开按钮自身造成重复
+        const target = e.target;
+        if (target.classList && (target.classList.contains('delete-card') || target.classList.contains('open-btn') || target.closest('.open-btn') || target.closest('.delete-card'))) {
+            return;
+        }
+        const card = target.closest('.tool-card');
+        if (card) {
+            const url = card.getAttribute('data-url');
+            if (url) {
+                window.open(url, '_blank');
+            } else {
+                showNotification('该卡片尚未配置有效链接', 'warning');
+            }
+        }
+    });
+
+    // 动态窗口显示当前自定义页面数量友好更新
+    window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY) {
+            renderCards();
+        }
+    });
+</script>
+</body>
+</html>

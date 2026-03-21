@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索与结果管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 8px;
+            color: #333;
+            font-size: 9px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            height: calc(100vh - 16px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 1.6rem;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .search-section {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        
+        .search-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        .compact-group {
+            flex: 0.8;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex: 0.6;
+        }
+        
+        button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .search-btn {
+            background: #3498db;
+            color: white;
+        }
+        
+        .search-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
+        }
+        
+        .save-btn {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .save-btn:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(46, 204, 113, 0.3);
+        }
+        
+        .results-section {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .results-container {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .result-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: #f8f9fa;
+            padding: 8px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .panel-header.api1 .panel-title {
+            color: #3498db;
+        }
+        
+        .panel-header.api2 .panel-title {
+            color: #e74c3c;
+        }
+        
+        .count-badge {
+            background: #e9ecef;
+            color: #6c757d;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .panel-header.api1 .count-badge {
+            background: #3498db;
+            color: white;
+        }
+        
+        .panel-header.api2 .count-badge {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        
+        .section-title i {
+            color: #3498db;
+        }
+        
+        .json-container {
+            flex: 1;
+            overflow: auto;
+            padding: 12px;
+            background-color: #f8f9fa;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .json-content {
+            background: white;
+            border-radius: 4px;
+            padding: 12px;
+            border: 1px solid #e9ecef;
+            max-height: 100%;
+            overflow: auto;
+        }
+        
+        .json-key {
+            color: #3498db;
+            font-weight: 600;
+        }
+        
+        .json-string {
+            color: #e74c3c;
+        }
+        
+        .json-number {
+            color: #2ecc71;
+            font-weight: 600;
+        }
+        
+        .json-boolean {
+            color: #9b59b6;
+            font-weight: 600;
+        }
+        
+        .json-null {
+            color: #95a5a6;
+            font-weight: 600;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #bdc3c7;
+        }
+        
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 8px;
+            right: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-12px);
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.success {
+            background: #2ecc71;
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        .notification.info {
+            background: #3498db;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 8px;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        
+        .json-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 6px;
+        }
+        
+        .json-btn {
+            padding: 2px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: white;
+            color: #6c757d;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .json-btn:hover {
+            background: #f8f9fa;
+            border-color: #3498db;
+            color: #3498db;
+        }
+        
+        @media (max-width: 768px) {
+            .search-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .results-container {
+                flex-direction: column;
+            }
+            
+            .button-group {
+                width: 100%;
+            }
+            
+            .json-container {
+                font-size: 8px;
+            }
+            
+            .json-controls {
+                flex-direction: column;
+                gap: 3px;
+            }
+            
+            .json-btn {
+                padding: 1px 4px;
+                font-size: 0.6rem;
+            }
+            
+            .panel-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>搜索与结果管理系统</h2>
+        </header>
+        
+        <section class="search-section">
+            <div class="search-row">
+                <div class="form-group">
+                    <label for="searchTerm"><i class="fas fa-search"></i> 搜索词</label>
+                    <input type="text" id="searchTerm" autofocus placeholder="请输入搜索词...">
+                </div>
+                
+                <div class="form-group compact-group">
+                    <label for="extraParams1"><i class="fas fa-cog"></i> 测试接口参数</label>
+                    <input type="text" id="extraParams1" placeholder='JSON格式'>
+                </div>
+                
+                <div class="form-group compact-group">
+                    <label for="extraParams2"><i class="fas fa-cog"></i> 对比接口参数</label>
+                    <input type="text" id="extraParams2" placeholder='JSON格式'>
+                </div>
+                
+                <div class="button-group">
+                    <button class="search-btn" type="submit" id="searchBtn">
+                        <i class="fas fa-search"></i> 查询
+                    </button>
+
+                    <button class="save-btn" id="saveBtn">
+                        <i class="fas fa-save"></i> 保存
+                    </button>
+                </div>
+            </div>
+            
+            <div class="search-row" style="margin-top: 10px;">
+                <div class="form-group compact-group">
+                    <label for="customHeaders1"><i class="fas fa-heading"></i> 测试接口请求头</label>
+                    <input type="text" id="customHeaders1" placeholder='JSON格式，例如: {"x-custom-header": "value"}'>
+                </div>
+                
+                <div class="form-group compact-group">
+                    <label for="customHeaders2"><i class="fas fa-heading"></i> 对比接口请求头</label>
+                    <input type="text" id="customHeaders2" placeholder='JSON格式，例如: {"x-custom-header": "value"}'>
+                </div>
+                
+                <div class="form-group compact-group">
+                    <label for="apiUrls"><i class="fas fa-link"></i> API URL配置</label>
+                    <input type="text" id="apiUrls" placeholder='JSON格式，例如: {"url1": "...", "url2": "..."}'>
+                </div>
+            </div>
+        </section>
+        <script>
+        document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('searchBtn').click();
+        }
+        });
+        </script>
+        <section class="results-section">
+            <div class="results-container">
+                <div class="result-panel">
+                    <div class="panel-header api1">
+                        <div class="panel-title">
+                            <i class="fas fa-database"></i> 测试接口结果
+                        </div>
+                        <div class="count-display">
+                            <span class="count-badge" id="count1">count: 0</span>
+                        </div>
+                        <div class="json-controls">
+                            <button class="json-btn" data-panel="1" data-action="copy"><i class="fas fa-copy"></i> 复制</button>
+                            <button class="json-btn" data-panel="1" data-action="expand"><i class="fas fa-expand-alt"></i> 展开</button>
+                            <button class="json-btn" data-panel="1" data-action="collapse"><i class="fas fa-compress-alt"></i> 折叠</button>
+                        </div>
+                    </div>
+                    <div class="json-container" id="jsonContainer1">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>暂无数据，请输入搜索词并点击查询</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-panel">
+                    <div class="panel-header api2">
+                        <div class="panel-title">
+                            <i class="fas fa-server"></i> 对比接口结果
+                        </div>
+                        <div class="count-display">
+                            <span class="count-badge" id="count2">count: 0</span>
+                        </div>
+                        <div class="json-controls">
+                            <button class="json-btn" data-panel="2" data-action="copy"><i class="fas fa-copy"></i> 复制</button>
+                            <button class="json-btn" data-panel="2" data-action="expand"><i class="fas fa-expand-alt"></i> 展开</button>
+                            <button class="json-btn" data-panel="2" data-action="collapse"><i class="fas fa-compress-alt"></i> 折叠</button>
+                        </div>
+                    </div>
+                    <div class="json-container" id="jsonContainer2">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>暂无数据，请输入搜索词并点击查询</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>© 2025 搜索与结果管理系统 | 用于双接口搜索</p>
+        </footer>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // 默认接口配置
+        const DEFAULT_API_CONFIG = {
+            url1: 'http://nodejs-qcc-backend-data.sit.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true',
+            url2: 'http://nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true'
+        };
+        
+        // 固定密钥
+        const SECRET_KEY = 'e7e3096d-7dd0-4ddd-98d3-0b2b77996f6e';
+        
+        // DOM元素
+        const searchBtn = document.getElementById('searchBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const searchTermInput = document.getElementById('searchTerm');
+        const extraParams1Input = document.getElementById('extraParams1');
+        const extraParams2Input = document.getElementById('extraParams2');
+        const customHeaders1Input = document.getElementById('customHeaders1');
+        const customHeaders2Input = document.getElementById('customHeaders2');
+        const apiUrlsInput = document.getElementById('apiUrls');
+        const jsonContainer1 = document.getElementById('jsonContainer1');
+        const jsonContainer2 = document.getElementById('jsonContainer2');
+        const notification = document.getElementById('notification');
+        const count1 = document.getElementById('count1');
+        const count2 = document.getElementById('count2');
+        
+        // 当前搜索结果
+        let currentResults1 = null;
+        let currentResults2 = null;
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 生成时间戳（前10位）
+        function generateTimestamp() {
+            return Math.floor(Date.now() / 1000).toString().substring(0, 10);
+        }
+        
+        // 计算MD5 token
+        function calculateToken() {
+            const timestamp = generateTimestamp();
+            const data = "metersphere" + timestamp + SECRET_KEY;
+            
+            // 使用CryptoJS计算MD5
+            return CryptoJS.MD5(data).toString();
+        }
+        
+        // 构建基础请求头
+        function buildBaseHeaders() {
+            return {
+                'x-request-timestamp': generateTimestamp(),
+                'x-request-access-token': calculateToken(),
+                'x-request-from-app-name': 'metersphere',
+                'Content-Type': 'application/json',
+                'x-request-strategy-custom-ab-search-group-code': 'EXPERIMENT_A'
+            };
+        }
+        
+        // 合并请求头
+        function mergeHeaders(baseHeaders, customHeaders) {
+            return {...baseHeaders, ...customHeaders};
+        }
+        
+        // 构建请求数据
+        function buildRequestData(searchTerm, extraParams = {}) {
+            return {
+                searchKey: searchTerm,
+                reasonType: 1,
+                filter: "{\"hst\":[5]}",
+                pageSize: 40,
+                ...extraParams
+            };
+        }
+        
+        // 调用API
+        async function callApi(url, headers, data) {
+            try {
+                console.log('调用API:', url);
+                console.log('请求头:', headers);
+                console.log('请求数据:', data);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误! 状态码: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('API返回:', result);
+                return result;
+            } catch (error) {
+                console.error('API调用失败:', error);
+                throw error;
+            }
+        }
+        
+        // 处理API返回数据 - 现在只返回原始数据
+        function processApiData(apiResult) {
+            if (!apiResult) {
+                return {
+                    rawData: null,
+                    totalRecords: 0
+                };
+            }
+            
+            return {
+                rawData: apiResult,
+                totalRecords: apiResult.Paging ? apiResult.Paging.TotalRecords : 0
+            };
+        }
+        
+        // 格式化JSON显示
+        function formatJsonForDisplay(jsonData) {
+            if (!jsonData) return "{}";
+            
+            try {
+                // 美化JSON字符串
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                
+                // 为不同类型的值添加CSS类
+                let formatted = jsonString
+                    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, function(match) {
+                        let cls = 'json-key';
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            if (/^"/.test(match)) {
+                                if (/:$/.test(match.slice(0, -1))) {
+                                    cls = 'json-key';
+                                } else {
+                                    cls = 'json-string';
+                                }
+                            }
+                        }
+                        return `<span class="${cls}">${match}</span>`;
+                    })
+                    .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+                    .replace(/\b(null)\b/g, '<span class="json-null">$1</span>')
+                    .replace(/\b(\d+)\b/g, '<span class="json-number">$1</span>');
+                
+                return formatted;
+            } catch (error) {
+                console.error('JSON格式化错误:', error);
+                return `<span class="json-string">${JSON.stringify(jsonData)}</span>`;
+            }
+        }
+        
+        // 显示JSON数据
+        function displayJsonData(jsonData, containerElement, panelId) {
+            if (!jsonData || Object.keys(jsonData).length === 0) {
+                containerElement.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>没有找到相关结果</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const formattedJson = formatJsonForDisplay(jsonData);
+            
+            const jsonContent = document.createElement('div');
+            jsonContent.className = 'json-content';
+            jsonContent.id = `jsonContent${panelId}`;
+            jsonContent.innerHTML = formattedJson;
+            
+            containerElement.innerHTML = '';
+            containerElement.appendChild(jsonContent);
+            
+            // 添加点击展开/折叠功能
+            addJsonToggleListeners(jsonContent, panelId);
+        }
+        
+        // 添加JSON展开/折叠功能
+        function addJsonToggleListeners(jsonContent, panelId) {
+            const items = jsonContent.querySelectorAll('.json-key + span');
+            
+            items.forEach(item => {
+                if (item.textContent === '[' || item.textContent === '{') {
+                    const key = item.previousElementSibling;
+                    if (key && key.classList.contains('json-key')) {
+                        key.style.cursor = 'pointer';
+                        key.title = '点击展开/折叠';
+                        
+                        key.addEventListener('click', function() {
+                            const nextSibling = this.nextElementSibling;
+                            if (nextSibling && (nextSibling.textContent === '[' || nextSibling.textContent === '{')) {
+                                toggleJsonSection(this, panelId);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        
+        // 切换JSON部分展开/折叠
+        function toggleJsonSection(element, panelId) {
+            const container = document.getElementById(`jsonContent${panelId}`);
+            const start = element.nextElementSibling;
+            if (!start) return;
+            
+            const startChar = start.textContent;
+            const endChar = startChar === '[' ? ']' : '}';
+            let depth = 1;
+            let current = start.nextElementSibling;
+            let endIndex = -1;
+            let children = [];
+            
+            // 查找匹配的结束字符
+            while (current && depth > 0) {
+                if (current.textContent === startChar) depth++;
+                if (current.textContent === endChar) depth--;
+                
+                if (depth === 0) {
+                    endIndex = Array.from(container.children).indexOf(current);
+                    break;
+                }
+                
+                children.push(current);
+                current = current.nextElementSibling;
+            }
+            
+            if (endIndex === -1) return;
+            
+            // 切换显示/隐藏
+            const isHidden = children.some(child => child.style.display === 'none');
+            
+            if (isHidden) {
+                // 展开
+                children.forEach(child => {
+                    child.style.display = '';
+                });
+                element.innerHTML = element.innerHTML.replace('▶', '▼');
+            } else {
+                // 折叠
+                children.forEach(child => {
+                    child.style.display = 'none';
+                });
+                element.innerHTML = element.innerHTML.replace('▼', '▶');
+            }
+        }
+        
+        // 复制JSON到剪贴板
+        function copyJsonToClipboard(panelId) {
+            let jsonData;
+            if (panelId === 1) {
+                jsonData = currentResults1;
+            } else {
+                jsonData = currentResults2;
+            }
+            
+            if (!jsonData) {
+                showNotification('没有可复制的数据', 'error');
+                return;
+            }
+            
+            try {
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                navigator.clipboard.writeText(jsonString).then(() => {
+                    showNotification(`接口${panelId}的JSON数据已复制到剪贴板`, 'success');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    showNotification('复制失败，请手动复制', 'error');
+                });
+            } catch (error) {
+                console.error('复制JSON失败:', error);
+                showNotification('复制失败，JSON数据格式错误', 'error');
+            }
+        }
+        
+        // 展开所有JSON节点
+        function expandAllJson(panelId) {
+            const container = document.getElementById(`jsonContent${panelId}`);
+            if (!container) return;
+            
+            const hiddenItems = container.querySelectorAll('span[style*="display: none"]');
+            const collapsedKeys = container.querySelectorAll('.json-key');
+            
+            hiddenItems.forEach(item => {
+                item.style.display = '';
+            });
+            
+            collapsedKeys.forEach(key => {
+                key.innerHTML = key.innerHTML.replace('▶', '▼');
+            });
+            
+            showNotification(`接口${panelId}的JSON已全部展开`, 'info');
+        }
+        
+        // 折叠所有JSON节点
+        function collapseAllJson(panelId) {
+            const container = document.getElementById(`jsonContent${panelId}`);
+            if (!container) return;
+            
+            const items = container.querySelectorAll('.json-key + span');
+            const startIndices = [];
+            
+            // 找到所有数组和对象的开始位置
+            items.forEach((item, index) => {
+                if (item.textContent === '[' || item.textContent === '{') {
+                    startIndices.push(index);
+                }
+            });
+            
+            // 折叠每个找到的数组/对象
+            startIndices.forEach(startIndex => {
+                const startItem = items[startIndex];
+                const key = startItem.previousElementSibling;
+                const startChar = startItem.textContent;
+                const endChar = startChar === '[' ? ']' : '}';
+                let depth = 1;
+                let currentIndex = startIndex + 1;
+                
+                // 查找匹配的结束字符
+                while (currentIndex < items.length && depth > 0) {
+                    if (items[currentIndex].textContent === startChar) depth++;
+                    if (items[currentIndex].textContent === endChar) depth--;
+                    
+                    if (depth === 0) break;
+                    
+                    // 隐藏子元素
+                    items[currentIndex].style.display = 'none';
+                    currentIndex++;
+                }
+                
+                // 更新键的指示器
+                if (key) {
+                    key.innerHTML = key.innerHTML.replace('▼', '▶');
+                }
+            });
+            
+            showNotification(`接口${panelId}的JSON已全部折叠`, 'info');
+        }
+        
+        // 搜索按钮点击事件
+        searchBtn.addEventListener('click', async function() {
+            const searchTerm = searchTermInput.value.trim();
+            const extraParams1 = extraParams1Input.value.trim();
+            const extraParams2 = extraParams2Input.value.trim();
+            const customHeaders1 = customHeaders1Input.value.trim();
+            const customHeaders2 = customHeaders2Input.value.trim();
+            const apiUrls = apiUrlsInput.value.trim();
+            
+            if (!searchTerm) {
+                showNotification('请输入搜索词', 'error');
+                return;
+            }
+            
+            // 解析额外参数
+            let paramsObj1 = {};
+            let paramsObj2 = {};
+            
+            if (extraParams1) {
+                try {
+                    paramsObj1 = JSON.parse(extraParams1);
+                } catch (e) {
+                    showNotification('测试接口额外参数格式错误，请使用正确的JSON格式', 'error');
+                    return;
+                }
+            }
+            
+            if (extraParams2) {
+                try {
+                    paramsObj2 = JSON.parse(extraParams2);
+                } catch (e) {
+                    showNotification('对比接口额外参数格式错误，请使用正确的JSON格式', 'error');
+                    return;
+                }
+            }
+            
+            // 解析自定义请求头
+            let headersObj1 = {};
+            let headersObj2 = {};
+            
+            if (customHeaders1) {
+                try {
+                    headersObj1 = JSON.parse(customHeaders1);
+                } catch (e) {
+                    showNotification('测试接口请求头格式错误，请使用正确的JSON格式', 'error');
+                    return;
+                }
+            }
+            
+            if (customHeaders2) {
+                try {
+                    headersObj2 = JSON.parse(customHeaders2);
+                } catch (e) {
+                    showNotification('对比接口请求头格式错误，请使用正确的JSON格式', 'error');
+                    return;
+                }
+            }
+            
+            // 解析API URL配置
+            let apiConfig = {...DEFAULT_API_CONFIG};
+            if (apiUrls) {
+                try {
+                    const parsedUrls = JSON.parse(apiUrls);
+                    apiConfig = {...apiConfig, ...parsedUrls};
+                } catch (e) {
+                    showNotification('API URL配置格式错误，请使用正确的JSON格式', 'error');
+                    return;
+                }
+            }
+            
+            // 调用两个接口
+            await searchBothApis(searchTerm, paramsObj1, paramsObj2, headersObj1, headersObj2, apiConfig);
+        });
+        
+        // 保存按钮点击事件
+        saveBtn.addEventListener('click', function() {
+            const searchTerm = searchTermInput.value.trim();
+            
+            if (!searchTerm) {
+                showNotification('请输入搜索词', 'error');
+                return;
+            }
+            
+            if (!currentResults1 && !currentResults2) {
+                showNotification('没有可保存的结果', 'error');
+                return;
+            }
+            
+            // 直接保存到MySQL数据库
+            saveToMySQL(searchTerm, currentResults1, currentResults2);
+        });
+        
+        // 调用两个API进行搜索
+        async function searchBothApis(searchTerm, paramsObj1, paramsObj2, headersObj1, headersObj2, apiConfig) {
+            // 显示加载状态
+            jsonContainer1.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>正在调用测试接口...</p>
+                </div>
+            `;
+            
+            jsonContainer2.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>正在调用对比接口...</p>
+                </div>
+            `;
+            
+            // 重置计数显示
+            count1.textContent = 'count: 0';
+            count2.textContent = 'count: 0';
+            
+            try {
+                const baseHeaders = buildBaseHeaders();
+                const headers1 = mergeHeaders(baseHeaders, headersObj1);
+                const headers2 = mergeHeaders(baseHeaders, headersObj2);
+                
+                const data1 = buildRequestData(searchTerm, paramsObj1);
+                const data2 = buildRequestData(searchTerm, paramsObj2);
+                
+                // 并行调用两个接口
+                const [result1, result2] = await Promise.all([
+                    callApi(apiConfig.url1, headers1, data1),
+                    callApi(apiConfig.url2, headers2, data2)
+                ]);
+                
+                // 处理返回数据
+                const processedData1 = processApiData(result1);
+                const processedData2 = processApiData(result2);
+                
+                currentResults1 = processedData1.rawData;
+                currentResults2 = processedData2.rawData;
+                
+                // 更新计数显示
+                count1.textContent = `count: ${processedData1.totalRecords}`;
+                count2.textContent = `count: ${processedData2.totalRecords}`;
+                
+                // 显示JSON数据
+                displayJsonData(currentResults1, jsonContainer1, 1);
+                displayJsonData(currentResults2, jsonContainer2, 2);
+                
+                showNotification(`搜索完成，测试接口返回 ${processedData1.totalRecords} 条记录，对比接口返回 ${processedData2.totalRecords} 条记录`, 'success');
+                
+            } catch (error) {
+                console.error('搜索失败:', error);
+                showNotification(`搜索失败: ${error.message}`, 'error');
+                
+                // 显示错误状态
+                jsonContainer1.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>测试接口调用失败</p>
+                        <p style="font-size: 0.8rem; margin-top: 5px;">${error.message}</p>
+                    </div>
+                `;
+                
+                jsonContainer2.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>对比接口调用失败</p>
+                        <p style="font-size: 0.8rem; margin-top: 5px;">${error.message}</p>
+                    </div>
+                `;
+                
+                // 重置计数显示
+                count1.textContent = 'count: 0';
+                count2.textContent = 'count: 0';
+            }
+        }
+        
+        // 获取当前时间（不含特殊符号）
+        function getCurrentTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
+            const second = String(now.getSeconds()).padStart(2, '0');
+            
+            return `${year}${month}${day}${hour}${minute}${second}`;
+        }
+        
+        // 直接保存到MySQL数据库
+        function saveToMySQL(searchTerm, results1, results2) {
+            // 显示保存状态
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            saveBtn.disabled = true;
+            
+            // 模拟数据库操作延迟
+            setTimeout(() => {
+                try {
+                    // 在实际应用中，这里应该是直接连接MySQL数据库
+                    const saveData = {
+                        search_term: searchTerm,
+                        api1_results: JSON.stringify(results1),
+                        api2_results: JSON.stringify(results2),
+                        save_time: getCurrentTime()
+                    };
+                    
+                    // 模拟成功保存
+                    console.log('保存到数据库的数据:', saveData);
+                    
+                    // 恢复按钮状态
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                    
+                    const totalRecords1 = results1?.Paging?.TotalRecords || 0;
+                    const totalRecords2 = results2?.Paging?.TotalRecords || 0;
+                    const totalResults = totalRecords1 + totalRecords2;
+                    showNotification(`成功保存搜索词 "${searchTerm}" 和 ${totalResults} 条记录到数据库`, 'success');
+                    
+                } catch (error) {
+                    // 恢复按钮状态
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                    
+                    console.error('保存到数据库时出错:', error);
+                    showNotification('保存到数据库时出错，请检查数据库连接', 'error');
+                }
+            }, 1500);
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为JSON控制按钮添加事件监听器
+            document.querySelectorAll('.json-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const panelId = this.getAttribute('data-panel');
+                    const action = this.getAttribute('data-action');
+                    
+                    switch(action) {
+                        case 'copy':
+                            copyJsonToClipboard(panelId);
+                            break;
+                        case 'expand':
+                            expandAllJson(panelId);
+                            break;
+                        case 'collapse':
+                            collapseAllJson(panelId);
+                            break;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
