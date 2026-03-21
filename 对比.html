@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>详情接口对比工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 添加 CryptoJS 库用于 MD5 计算 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-size: 13px;
+        }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.4;
+            padding: 8px;
+            height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 16px);
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        header {
+            flex-shrink: 0;
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e1e5eb;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 3px;
+            font-size: 1.3rem;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            padding: 10px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        
+        .card-title {
+            font-size: 0.95rem;
+            color: #3498db;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-title i {
+            margin-right: 5px;
+        }
+        
+        .compact-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .input-compact {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .input-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.8rem;
+        }
+        
+        .input-label i {
+            margin-right: 4px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .button-group-compact {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        button {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button i {
+            margin-right: 4px;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-tertiary {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-tertiary:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-reset {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .btn-toggle {
+            background-color: #f39c12;
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+        
+        .btn-toggle:hover {
+            background-color: #e67e22;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #7f8c8d;
+            flex-shrink: 0;
+        }
+        
+        .loading i {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+            color: #3498db;
+        }
+        
+        .result-container {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+        
+        .result-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .middle-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #e1e5eb;
+            padding: 6px 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        
+        .middle-info-title {
+            font-size: 0.85rem;
+            color: #2c3e50;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            margin-right: 15px;
+        }
+        
+        .middle-info-title i {
+            margin-right: 5px;
+            color: #3498db;
+        }
+        
+        .middle-info {
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        
+        .summary-inline {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            justify-content: space-around;
+            margin: 0 10px;
+        }
+        
+        .summary-inline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 8px;
+            min-width: 60px;
+        }
+        
+        .summary-inline-value {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+        
+        .summary-inline-label {
+            font-size: 0.7rem;
+            color: #7f8c8d;
+            margin-top: 1px;
+        }
+        
+        .env-info-compact {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            background-color: white;
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 1px solid #e1e5eb;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        
+        .env-info-compact.sit {
+            border-left: 3px solid #2ecc71;
+        }
+        
+        .env-info-compact.uat {
+            border-left: 3px solid #9b59b6;
+        }
+        
+        .env-info-compact > div {
+            flex: 1;
+        }
+        
+        .env-info-compact h3 {
+            color: #2c3e50;
+            margin-bottom: 2px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .env-info-compact p {
+            color: #7f8c8d;
+            font-size: 0.75rem;
+        }
+        
+        .comparison-container {
+            flex: 1;
+            overflow: auto;
+            border: 1px solid #e1e5eb;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            min-height: 300px;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        .comparison-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .comparison-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.78rem;
+            vertical-align: top;
+        }
+        
+        .comparison-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .node-path {
+            font-weight: 600;
+            color: #2c3e50;
+            font-family: monospace;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        
+        .node-value {
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+        
+        .match {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        
+        .mismatch {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        .na {
+            color: #95a5a6;
+            font-style: italic;
+            font-weight: normal;
+        }
+        
+        .list-item {
+            padding: 2px 5px;
+            margin: 1px 0;
+            background-color: #f8f9fa;
+            border-radius: 2px;
+            border-left: 2px solid #3498db;
+            font-size: 0.75rem;
+        }
+        
+        .list-container {
+            max-height: 100px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 2px;
+            padding: 4px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+        
+        .status-success {
+            background-color: #2ecc71;
+        }
+        
+        .status-error {
+            background-color: #e74c3c;
+        }
+        
+        .status-warning {
+            background-color: #f39c12;
+        }
+        
+        .api-url {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-size: 0.75rem;
+            word-break: break-all;
+        }
+        
+        @media (max-width: 768px) {
+            .input-compact {
+                min-width: 100%;
+            }
+            
+            .compact-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .button-group-compact {
+                justify-content: center;
+            }
+            
+            .env-info-compact {
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .comparison-table {
+                font-size: 0.75rem;
+            }
+            
+            .comparison-table th,
+            .comparison-table td {
+                padding: 5px 6px;
+            }
+            
+            .middle-info-header {
+                flex-wrap: wrap;
+            }
+            
+            .summary-inline {
+                order: 3;
+                width: 100%;
+                margin-top: 8px;
+                justify-content: space-between;
+            }
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 6px;
+            border-radius: 3px;
+            margin: 6px 0;
+            border-left: 4px solid #f5c6cb;
+            font-size: 0.8rem;
+        }
+        
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #3498db;
+            padding: 0;
+            font-size: 0.7rem;
+            margin-left: 3px;
+        }
+        
+        /* 调整列宽比例，让对比结果显示区域更大 */
+        .comparison-table th:nth-child(1) { width: 25%; }
+        .comparison-table th:nth-child(2) { width: 35%; }
+        .comparison-table th:nth-child(3) { width: 35%; }
+        .comparison-table td:nth-child(2), 
+        .comparison-table td:nth-child(3) {
+            max-width: 0;
+        }
+        
+        /* 调整整体布局比例 */
+        .result-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .comparison-container {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        
+        .top-controls {
+            flex-shrink: 0;
+        }
+        
+        /* 调整环境信息内部布局 */
+        .env-info-content {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .env-info-left, .env-info-right {
+            flex: 1;
+        }
+        
+        /* 响应状态样式 */
+        .response-status {
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .response-status.success {
+            color: #2ecc71;
+        }
+        
+        .response-status.error {
+            color: #e74c3c;
+        }
+        
+        .response-status.warning {
+            color: #f39c12;
+        }
+        
+        /* 隐藏/显示动画 */
+        .middle-info.collapsed {
+            max-height: 0;
+            overflow: hidden;
+            margin-bottom: 0;
+            opacity: 0;
+        }
+        
+        .middle-info:not(.collapsed) {
+            max-height: 200px;
+            opacity: 1;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+        }
+        
+        /* 隐藏按钮图标动画 */
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-exchange-alt"></i> 详情接口对比工具</h1>
+<!--            <p class="subtitle">输入keyNo参数，对比SIT与UAT环境的API返回数据</p>-->
+        </header>
+        
+        <div class="card top-controls">
+            <h2 class="card-title"><i class="fas fa-cogs"></i> 参数配置</h2>
+            <div class="compact-controls">
+                <div class="input-compact">
+                    <div class="input-label">
+                        <i class="fas fa-key"></i> keyNo 参数
+                    </div>
+                    <input type="text" id="keyNo" placeholder="请输入keyNo参数，例如：84515f93e958b7f650b361a3beafdb0d" value="84515f93e958b7f650b361a3beafdb0d">
+                </div>
+                
+                <div class="button-group-compact">
+                    <button id="compareBtn" class="btn-primary" title="同时测试两个环境并对比结果">
+                        <i class="fas fa-balance-scale"></i> 对比
+                    </button>
+                    <button id="testSitBtn" class="btn-secondary" title="仅测试SIT环境">
+                        <i class="fas fa-vial"></i> SIT
+                    </button>
+                    <button id="testUatBtn" class="btn-tertiary" title="仅测试UAT环境">
+                        <i class="fas fa-vial"></i> UAT
+                    </button>
+                    <button id="resetBtn" class="btn-reset" title="重置所有内容">
+                        <i class="fas fa-redo"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>正在请求接口数据，请稍候...</p>
+        </div>
+        
+        <div class="result-container" id="resultContainer">
+            <div class="result-content">
+                <div class="middle-info-header">
+                    <div class="middle-info-title">
+                        <i class="fas fa-info-circle"></i> 环境信息与统计
+                    </div>
+                    
+                    <div class="summary-inline">
+                        <div class="summary-inline-item">
+                            <div class="summary-inline-value" id="totalNodes">0</div>
+                            <div class="summary-inline-label">节点数</div>
+                        </div>
+                        <div class="summary-inline-item">
+                            <div class="summary-inline-value match" id="matchedNodes">0</div>
+                            <div class="summary-inline-label">匹配</div>
+                        </div>
+                        <div class="summary-inline-item">
+                            <div class="summary-inline-value mismatch" id="mismatchedNodes">0</div>
+                            <div class="summary-inline-label">不匹配</div>
+                        </div>
+                        <div class="summary-inline-item">
+                            <div class="summary-inline-value" id="listNodes">0</div>
+                            <div class="summary-inline-label">列表</div>
+                        </div>
+                    </div>
+                    
+                    <button id="toggleMiddleInfo" class="btn-toggle" title="隐藏/显示环境信息">
+                        <i class="fas fa-chevron-up toggle-icon" id="toggleIcon"></i>
+                        隐藏
+                    </button>
+                </div>
+                
+                <div class="middle-info" id="middleInfo">
+                    <div class="env-info-compact sit">
+                        <div class="env-info-content">
+                            <div class="env-info-left">
+                                <h3><span class="status-indicator" id="sitStatusIndicator"></span> SIT</h3>
+                                <p><span class="api-url" id="sitUrl">sit</span></p>
+                            </div>
+                            <div class="env-info-right">
+                                <h3>响应</h3>
+                                <p>状态: <span id="sitStatus" class="response-status">-</span> | 时间: <span id="sitTime">-</span>ms</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="env-info-compact uat">
+                        <div class="env-info-content">
+                            <div class="env-info-left">
+                                <h3><span class="status-indicator" id="uatStatusIndicator"></span> UAT</h3>
+                                <p><span class="api-url" id="uatUrl">uat</span></p>
+                            </div>
+                            <div class="env-info-right">
+                                <h3>响应</h3>
+                                <p>状态: <span id="uatStatus" class="response-status">-</span> | 时间: <span id="uatTime">-</span>ms</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="errorContainer" style="display: none;"></div>
+                </div>
+                
+                <div class="comparison-container">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>节点路径</th>
+                                <th>SIT 环境值</th>
+                                <th>UAT 环境值</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonBody">
+                            <!-- 对比结果将在这里动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 定义要显示的节点，可以自定义添加或删除
+        // 根据实际API返回结构进行配置
+        const displayNodes = [
+            { path: 'Status', label: '响应代码' },
+            { path: 'Result.Name', label: '名称' },
+            { path: 'Result.QccAbstract', label: '拼接简介' },
+            { path: 'Result.Abstract', label: '简介' },
+            { path: 'Result.AIAbstract', label: 'AI简介' },
+            // { path: 'Message', label: '响应消息' },
+            // { path: 'Result.ContactInfo.PhoneNumber', label: '外层电话' },
+            // { path: 'Result.ContactInfo.TelSource', label: '外层电话来源1' },
+            // { path: 'Result.ContactInfo.TelSourceV2', label: '外层电话来源2' },
+            // { path: 'Result.ContactInfo.TelSourceDesc', label: '外层电话来描述' },
+            // { path: 'Result.HisTelList', label: '历史电话列表_电话', isList: true, listItemDisplay: 'Tel' },
+            // { path: 'Result.HisTelList', label: '历史电话列表_SourceFrom', isList: true, listItemDisplay: 'SourceFrom' },
+            // { path: 'Result.HisTelList', label: '历史电话列表_SourceFromV2', isList: true, listItemDisplay: 'SourceFromV2' },
+            // { path: 'Result.HisTelList', label: '历史电话列表_SourceFromOrigin', isList: true, listItemDisplay: 'SourceFromOrigin' },
+            // { path: 'Result.HisTelList', label: '历史电话列表_AnnualYear', isList: true, listItemDisplay: 'AnnualYear' },
+            // { path: 'Result.HisTelList', label: '历史电话列表_TelSourceDesc', isList: true, listItemDisplay: 'TelSourceDesc' },
+            // { path: 'Result.HisTelList', label: '历史电话列表_Status', isList: true, listItemDisplay: 'Status' },
+        ];
+        
+        // DOM元素
+        const keyNoInput = document.getElementById('keyNo');
+        const compareBtn = document.getElementById('compareBtn');
+        const testSitBtn = document.getElementById('testSitBtn');
+        const testUatBtn = document.getElementById('testUatBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loadingEl = document.getElementById('loading');
+        const resultContainer = document.getElementById('resultContainer');
+        const comparisonBody = document.getElementById('comparisonBody');
+        const errorContainer = document.getElementById('errorContainer');
+        const toggleMiddleInfoBtn = document.getElementById('toggleMiddleInfo');
+        const toggleIcon = document.getElementById('toggleIcon');
+        const middleInfo = document.getElementById('middleInfo');
+        
+        // 结果展示元素
+        const sitStatusEl = document.getElementById('sitStatus');
+        const sitTimeEl = document.getElementById('sitTime');
+        const sitStatusIndicator = document.getElementById('sitStatusIndicator');
+        const sitUrlEl = document.getElementById('sitUrl');
+        
+        const uatStatusEl = document.getElementById('uatStatus');
+        const uatTimeEl = document.getElementById('uatTime');
+        const uatStatusIndicator = document.getElementById('uatStatusIndicator');
+        const uatUrlEl = document.getElementById('uatUrl');
+        
+        const totalNodesEl = document.getElementById('totalNodes');
+        const matchedNodesEl = document.getElementById('matchedNodes');
+        const mismatchedNodesEl = document.getElementById('mismatchedNodes');
+        const listNodesEl = document.getElementById('listNodes');
+        
+        // 环境URL基础部分
+        const sitBaseUrl = 'http://nodejs-qcc-backend-data.sit.office.greatld.com/api/ECILocal/GetDetail';
+        const uatBaseUrl = 'http://nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/GetDetail';
+
+        // 根据路径获取嵌套对象的值
+        function getValueByPath(obj, path) {
+            return path.split('.').reduce((current, key) => {
+                return current && current[key] !== undefined ? current[key] : undefined;
+            }, obj);
+        }
+        
+        // 检查值是否为空（undefined、null或空字符串）
+        function isEmptyValue(value) {
+            return value === undefined || value === null || value === '';
+        }
+        
+        // 格式化值显示 - 修改为显示"NA"而不是"未找到"
+        function formatValue(value, isList = false, listItemDisplay = '') {
+            if (isEmptyValue(value)) {
+                return '<span class="na">NA</span>';
+            }
+            
+            if (isList && Array.isArray(value)) {
+                if (value.length === 0) {
+                    return '<span class="na">NA</span>';
+                }
+                
+                let html = '<div class="list-container">';
+                value.forEach((item, index) => {
+                    let displayText = '';
+                    if (listItemDisplay && item[listItemDisplay] !== undefined && item[listItemDisplay] !== null) {
+                        displayText = item[listItemDisplay];
+                    } else if (listItemDisplay && (item[listItemDisplay] === undefined || item[listItemDisplay] === null)) {
+                        displayText = '<span class="na">NA</span>';
+                    } else {
+                        displayText = JSON.stringify(item);
+                    }
+                    html += `<div class="list-item">${index + 1}. ${displayText}</div>`;
+                });
+                html += '</div>';
+                return html;
+            }
+            
+            // 如果是对象且不是数组，则格式化为JSON字符串
+            if (typeof value === 'object') {
+                try {
+                    return JSON.stringify(value, null, 2);
+                } catch {
+                    return String(value);
+                }
+            }
+            
+            return String(value);
+        }
+        
+        // 比较两个值是否相等 - 修改处理逻辑
+        function valuesMatch(value1, value2, isList = false, listItemDisplay = '') {
+            const isValue1Empty = isEmptyValue(value1);
+            const isValue2Empty = isEmptyValue(value2);
+
+            // 如果两个值都为空，视为匹配
+            if (isValue1Empty && isValue2Empty) {
+                return true;
+            }
+
+            // 如果一个为空一个不为空，视为不匹配
+            if (isValue1Empty !== isValue2Empty) {
+                return false;
+            }
+
+            // 如果是列表类型，特殊处理
+            if (isList && Array.isArray(value1) && Array.isArray(value2)) {
+                // 如果长度不同，直接返回不匹配
+                if (value1.length !== value2.length) {
+                    return false;
+                }
+
+                // 如果指定了列表项显示字段，则只比较该字段
+                if (listItemDisplay) {
+                    const sitListValues = value1.map(item => item[listItemDisplay]);
+                    const uatListValues = value2.map(item => item[listItemDisplay]);
+
+                    // 排序后比较（忽略顺序差异）
+                    // sitListValues.sort();
+                    // uatListValues.sort();
+
+                    // 逐个比较每个元素
+                    for (let i = 0; i < sitListValues.length; i++) {
+                        if (sitListValues[i] !== uatListValues[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } else {
+                    // 如果没有指定显示字段，比较整个对象
+                    // 先排序（根据JSON字符串）
+                    // const sorted1 = [...value1].sort((a, b) =>
+                    //     JSON.stringify(a).localeCompare(JSON.stringify(b))
+                    // );
+                    // const sorted2 = [...value2].sort((a, b) =>
+                    //     JSON.stringify(a).localeCompare(JSON.stringify(b))
+                    // );
+
+                    // 比较排序后的数组
+                    return JSON.stringify(sorted1) === JSON.stringify(sorted2);
+                }
+            }
+
+            // 如果两个都是数组（但不是作为列表类型处理的），比较数组内容
+            if (Array.isArray(value1) && Array.isArray(value2)) {
+                if (value1.length !== value2.length) return false;
+
+                // 简单比较数组内容
+                return JSON.stringify(value1) === JSON.stringify(value2);
+            }
+
+            // 对于非数组类型，比较字符串值
+            return String(value1) === String(value2);
+        }
+
+        // 显示对比结果
+        function displayComparison(sitData, uatData) {
+            comparisonBody.innerHTML = '';
+            clearErrors();
+
+            let matchedCount = 0;
+            let mismatchedCount = 0;
+            let listCount = 0;
+
+            // 如果数据为空，显示提示
+            if (!sitData || !uatData) {
+                comparisonBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 20px;">
+                            无法获取对比数据，请检查API响应
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            displayNodes.forEach(node => {
+                const sitValue = getValueByPath(sitData, node.path);
+                const uatValue = getValueByPath(uatData, node.path);
+
+                // 传递列表类型信息给比较函数
+                const match = valuesMatch(sitValue, uatValue, node.isList, node.listItemDisplay);
+
+                const row = document.createElement('tr');
+
+                // 节点路径列
+                const pathCell = document.createElement('td');
+                pathCell.className = 'node-path';
+                pathCell.textContent = node.label;
+                row.appendChild(pathCell);
+
+                // SIT值列
+                const sitCell = document.createElement('td');
+                sitCell.className = 'node-value';
+                sitCell.innerHTML = formatValue(sitValue, node.isList, node.listItemDisplay);
+                row.appendChild(sitCell);
+
+                // UAT值列
+                const uatCell = document.createElement('td');
+                uatCell.className = 'node-value';
+                uatCell.innerHTML = formatValue(uatValue, node.isList, node.listItemDisplay);
+                row.appendChild(uatCell);
+
+                // 如果值不匹配，添加高亮样式
+                if (!match) {
+                    row.style.backgroundColor = '#fff5f5';
+                    mismatchedCount++;
+                } else {
+                    matchedCount++;
+                }
+
+                if (node.isList) listCount++;
+
+                comparisonBody.appendChild(row);
+            });
+
+            // 更新统计信息
+            totalNodesEl.textContent = displayNodes.length;
+            matchedNodesEl.textContent = matchedCount;
+            mismatchedNodesEl.textContent = mismatchedCount;
+            listNodesEl.textContent = listCount;
+        }
+        
+        // 显示错误信息
+        function showError(message, env = '') {
+            errorContainer.style.display = 'block';
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <strong>${env ? env + '环境错误：' : '错误：'}</strong> ${message}
+                </div>
+            `;
+        }
+        
+        // 清除错误信息
+        function clearErrors() {
+            errorContainer.style.display = 'none';
+            errorContainer.innerHTML = '';
+        }
+        
+        // 更新状态指示器
+        function updateStatusIndicator(indicatorElement, status) {
+            indicatorElement.className = 'status-indicator';
+            
+            if (status >= 200 && status < 300) {
+                indicatorElement.classList.add('status-success');
+            } else if (status >= 400 && status < 500) {
+                indicatorElement.classList.add('status-warning');
+            } else if (status >= 500 || status === 0) {
+                indicatorElement.classList.add('status-error');
+            } else {
+                indicatorElement.classList.add('status-warning');
+            }
+        }
+        
+        // 更新状态文本样式
+        function updateStatusText(statusElement, status) {
+            statusElement.className = 'response-status';
+            
+            if (status >= 200 && status < 300) {
+                statusElement.classList.add('success');
+            } else if (status >= 400 && status < 500) {
+                statusElement.classList.add('warning');
+            } else if (status >= 500 || status === 0) {
+                statusElement.classList.add('error');
+            } else {
+                statusElement.classList.add('warning');
+            }
+        }
+        
+        // 显示对比结果
+        function displayComparison(sitData, uatData) {
+            comparisonBody.innerHTML = '';
+            clearErrors();
+            
+            let matchedCount = 0;
+            let mismatchedCount = 0;
+            let listCount = 0;
+            
+            // 如果数据为空，显示提示
+            if (!sitData || !uatData) {
+                comparisonBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 20px;">
+                            无法获取对比数据，请检查API响应
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            displayNodes.forEach(node => {
+                const sitValue = getValueByPath(sitData, node.path);
+                const uatValue = getValueByPath(uatData, node.path);
+                const match = valuesMatch(sitValue, uatValue);
+                
+                const row = document.createElement('tr');
+                
+                // 节点路径列
+                const pathCell = document.createElement('td');
+                pathCell.className = 'node-path';
+                pathCell.textContent = node.label;
+                row.appendChild(pathCell);
+                
+                // SIT值列
+                const sitCell = document.createElement('td');
+                sitCell.className = 'node-value';
+                sitCell.innerHTML = formatValue(sitValue, node.isList, node.listItemDisplay);
+                row.appendChild(sitCell);
+                
+                // UAT值列
+                const uatCell = document.createElement('td');
+                uatCell.className = 'node-value';
+                uatCell.innerHTML = formatValue(uatValue, node.isList, node.listItemDisplay);
+                row.appendChild(uatCell);
+                
+                // 如果值不匹配，添加高亮样式
+                if (!match) {
+                    row.style.backgroundColor = '#fff5f5';
+                    mismatchedCount++;
+                } else {
+                    matchedCount++;
+                }
+                
+                if (node.isList) listCount++;
+                
+                comparisonBody.appendChild(row);
+            });
+            
+            // 更新统计信息
+            totalNodesEl.textContent = displayNodes.length;
+            matchedNodesEl.textContent = matchedCount;
+            mismatchedNodesEl.textContent = mismatchedCount;
+            listNodesEl.textContent = listCount;
+        }
+
+        // 固定密钥
+        const SECRET_KEY = 'e7e3096d-7dd0-4ddd-98d3-0b2b77996f6e';
+
+        // 生成时间戳（前10位）
+        function generateTimestamp() {
+            return Math.floor(Date.now() / 1000).toString().substring(0, 10);
+        }
+
+        // 计算MD5 token
+        function calculateToken() {
+            const timestamp = generateTimestamp();
+            const data = "metersphere" + timestamp + SECRET_KEY;
+
+            // 使用CryptoJS计算MD5
+            return CryptoJS.MD5(data).toString();
+        }
+        
+        // 真实的API调用
+        async function callApi(env, keyNo) {
+            const startTime = Date.now();
+            
+            // 构建完整的URL
+            const baseUrl = env === 'sit' ? sitBaseUrl : uatBaseUrl;
+            const url = `${baseUrl}?keyNo=${encodeURIComponent(keyNo)}`;
+            
+            // 更新显示的URL
+            if (env === 'sit') {
+                sitUrlEl.textContent = url;
+            } else {
+                uatUrlEl.textContent = url;
+            }
+            
+            try {
+                // 发起API请求，添加headers
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'x-request-timestamp': generateTimestamp(),
+                        'x-request-access-token': calculateToken(),
+                        'x-request-from-app-name': 'metersphere',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                const responseTime = Date.now() - startTime;
+                const status = response.status;
+                
+                // 更新状态指示器
+                if (env === 'sit') {
+                    updateStatusIndicator(sitStatusIndicator, status);
+                    updateStatusText(sitStatusEl, status);
+                    sitStatusEl.textContent = status;
+                    sitTimeEl.textContent = responseTime;
+                } else {
+                    updateStatusIndicator(uatStatusIndicator, status);
+                    updateStatusText(uatStatusEl, status);
+                    uatStatusEl.textContent = status;
+                    uatTimeEl.textContent = responseTime;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${status}`);
+                }
+                
+                // 解析JSON响应
+                const data = await response.json();
+                
+                return {
+                    success: true,
+                    data: data,
+                    status: status,
+                    time: responseTime
+                };
+                
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                console.error(`${env}环境API调用失败:`, error);
+                
+                // 更新状态指示器
+                if (env === 'sit') {
+                    updateStatusIndicator(sitStatusIndicator, 0);
+                    updateStatusText(sitStatusEl, 0);
+                    sitStatusEl.textContent = 'Error';
+                    sitTimeEl.textContent = responseTime;
+                } else {
+                    updateStatusIndicator(uatStatusIndicator, 0);
+                    updateStatusText(uatStatusEl, 0);
+                    uatStatusEl.textContent = 'Error';
+                    uatTimeEl.textContent = responseTime;
+                }
+                
+                // 显示具体错误信息
+                let errorMessage = error.message;
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    errorMessage = `网络请求失败，可能是跨域问题。请检查：<br>
+                    1. API服务是否正常运行<br>
+                    2. 是否支持CORS跨域请求<br>
+                    3. 网络连接是否正常`;
+                }
+                
+                showError(errorMessage, env === 'sit' ? 'SIT' : 'UAT');
+                
+                return {
+                    success: false,
+                    data: null,
+                    status: 0,
+                    time: responseTime,
+                    error: errorMessage
+                };
+            }
+        }
+        
+        // 执行对比
+        async function performComparison() {
+            const keyNo = keyNoInput.value.trim();
+            
+            if (!keyNo) {
+                alert('请输入keyNo参数');
+                keyNoInput.focus();
+                return;
+            }
+            
+            // 显示加载状态
+            loadingEl.style.display = 'block';
+            resultContainer.style.display = 'none';
+            clearErrors();
+            
+            try {
+                // 同时请求两个环境的数据
+                const [sitResult, uatResult] = await Promise.all([
+                    callApi('sit', keyNo),
+                    callApi('uat', keyNo)
+                ]);
+                
+                // 显示结果区域
+                loadingEl.style.display = 'none';
+                resultContainer.style.display = 'block';
+                
+                // 显示对比结果
+                if (sitResult.success && uatResult.success) {
+                    displayComparison(sitResult.data, uatResult.data);
+                } else {
+                    // 如果有一个请求失败，显示错误但尝试显示部分结果
+                    if (sitResult.data || uatResult.data) {
+                        displayComparison(sitResult.data, uatResult.data);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('对比过程中发生错误:', error);
+                showError(`对比过程中发生错误: ${error.message}`);
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        // 测试单个环境
+        async function testEnvironment(env) {
+            const keyNo = keyNoInput.value.trim();
+            
+            if (!keyNo) {
+                alert('请输入keyNo参数');
+                keyNoInput.focus();
+                return;
+            }
+            
+            // 显示加载状态
+            loadingEl.style.display = 'block';
+            resultContainer.style.display = 'none';
+            clearErrors();
+            
+            try {
+                const result = await callApi(env, keyNo);
+                
+                // 显示结果区域
+                loadingEl.style.display = 'none';
+                resultContainer.style.display = 'block';
+                
+                // 显示单个环境的结果
+                comparisonBody.innerHTML = '';
+                
+                if (result.success && result.data) {
+                    displayNodes.forEach(node => {
+                        const value = getValueByPath(result.data, node.path);
+                        
+                        const row = document.createElement('tr');
+                        
+                        // 节点路径列
+                        const pathCell = document.createElement('td');
+                        pathCell.className = 'node-path';
+                        pathCell.textContent = node.label;
+                        row.appendChild(pathCell);
+                        
+                        // 值列（跨两列）
+                        const valueCell = document.createElement('td');
+                        valueCell.colSpan = 2;
+                        valueCell.className = 'node-value';
+                        valueCell.innerHTML = formatValue(value, node.isList, node.listItemDisplay);
+                        row.appendChild(valueCell);
+                        
+                        comparisonBody.appendChild(row);
+                    });
+                    
+                    // 更新统计信息
+                    totalNodesEl.textContent = displayNodes.length;
+                    matchedNodesEl.textContent = '-';
+                    mismatchedNodesEl.textContent = '-';
+                    
+                    let listCount = 0;
+                    displayNodes.forEach(node => {
+                        if (node.isList) listCount++;
+                    });
+                    listNodesEl.textContent = listCount;
+                    
+                    // 重置另一个环境的状态
+                    if (env === 'sit') {
+                        uatStatusEl.textContent = '-';
+                        uatTimeEl.textContent = '-';
+                        updateStatusIndicator(uatStatusIndicator, 0);
+                        updateStatusText(uatStatusEl, 0);
+                        uatUrlEl.textContent = `${uatBaseUrl}?keyNo=${encodeURIComponent(keyNo)}`;
+                    } else {
+                        sitStatusEl.textContent = '-';
+                        sitTimeEl.textContent = '-';
+                        updateStatusIndicator(sitStatusIndicator, 0);
+                        updateStatusText(sitStatusEl, 0);
+                        sitUrlEl.textContent = `${sitBaseUrl}?keyNo=${encodeURIComponent(keyNo)}`;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('测试过程中发生错误:', error);
+                showError(`测试过程中发生错误: ${error.message}`, env === 'sit' ? 'SIT' : 'UAT');
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        // 重置界面
+        function resetInterface() {
+            keyNoInput.value = '84515f93e958b7f650b361a3beafdb0d';
+            resultContainer.style.display = 'none';
+            loadingEl.style.display = 'none';
+            comparisonBody.innerHTML = '';
+            clearErrors();
+            
+            // 重置状态显示
+            sitStatusEl.textContent = '-';
+            sitTimeEl.textContent = '-';
+            updateStatusIndicator(sitStatusIndicator, 0);
+            updateStatusText(sitStatusEl, 0);
+            sitUrlEl.textContent = '//nodejs-qcc-backend-data.sit.office.greatld.com/api/ECILocal/GetDetail';
+
+            uatStatusEl.textContent = '-';
+            uatTimeEl.textContent = '-';
+            updateStatusIndicator(uatStatusIndicator, 0);
+            updateStatusText(uatStatusEl, 0);
+            uatUrlEl.textContent = '//nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/GetDetail';
+            
+            // 重置统计信息
+            totalNodesEl.textContent = '0';
+            matchedNodesEl.textContent = '0';
+            mismatchedNodesEl.textContent = '0';
+            listNodesEl.textContent = '0';
+        }
+        
+        // 切换中间信息区域显示/隐藏
+        function toggleMiddleInfo() {
+            const isCollapsed = middleInfo.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                // 展开
+                middleInfo.classList.remove('collapsed');
+                toggleIcon.classList.remove('rotated');
+                toggleMiddleInfoBtn.innerHTML = '<i class="fas fa-chevron-up toggle-icon" id="toggleIcon"></i> 隐藏';
+            } else {
+                // 隐藏
+                middleInfo.classList.add('collapsed');
+                toggleIcon.classList.add('rotated');
+                toggleMiddleInfoBtn.innerHTML = '<i class="fas fa-chevron-down toggle-icon rotated" id="toggleIcon"></i> 显示';
+            }
+        }
+        
+        // 事件监听
+        compareBtn.addEventListener('click', performComparison);
+        testSitBtn.addEventListener('click', () => testEnvironment('sit'));
+        testUatBtn.addEventListener('click', () => testEnvironment('uat'));
+        resetBtn.addEventListener('click', resetInterface);
+        toggleMiddleInfoBtn.addEventListener('click', toggleMiddleInfo);
+        
+        // 初始加载时显示示例数据
+        window.addEventListener('DOMContentLoaded', () => {
+            // 初始化状态指示器
+            updateStatusIndicator(sitStatusIndicator, 0);
+            updateStatusIndicator(uatStatusIndicator, 0);
+            updateStatusText(sitStatusEl, 0);
+            updateStatusText(uatStatusEl, 0);
+        });
+        
+        // 允许通过回车键触发对比
+        keyNoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performComparison();
+            }
+        });
+        
+        // 调整表格高度以充分利用空间
+        window.addEventListener('resize', () => {
+            // 不需要特别处理，CSS flex布局会自动调整
+        });
+    </script>
+</body>
+</html>
