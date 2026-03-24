@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
+<head>DEFAULT_API_CONFIG
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>聚合搜索 · 香港记录插入优化</title>
@@ -535,11 +535,14 @@
 
     <script>
         // ==================== 配置与工具函数 ====================
+<!--        const DEFAULT_API_CONFIG = {-->
+<!--            url1: 'http://nodejs-qcc-backend-data.sit.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true',-->
+<!--            url2: 'http://nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true'-->
+<!--        };-->
         const DEFAULT_API_CONFIG = {
-            url1: 'http://nodejs-qcc-backend-data.sit.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true',
-            url2: 'http://nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true'
-        };
-        
+                url1: '/api/search-sit?ignoreCache=true',
+                url2: '/api/search-prod?ignoreCache=true'
+};          }
         const SECRET_KEY = 'e7e3096d-7dd0-4ddd-98d3-0b2b77996f6e';
         
         // DOM 元素
