@@ -3,28 +3,43 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const targetUrl = 'http://nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true'
+  const targetUrl = 'http://nodejs-qcc-backend-data.prod.office.greatld.com/api/ECILocal/SearchMultiSelection?ignoreCache=true';
 
-  // 准备转发的请求头
   const headers = { ...req.headers };
-  // 关键：将 Host 改为后端期望的域名
-  headers.host = 'nodejs-qcc-backend-data.sit.office.greatld.com';
-  // 删除可能干扰的 Vercel 特有头
+  // 修正 Host 头为 PROD 域名
+  headers.host = 'nodejs-qcc-backend-data.prod.office.greatld.com';
   delete headers['x-vercel-deployment-url'];
   delete headers['x-forwarded-for'];
-  // 确保 Content-Type 正确
   headers['content-type'] = 'application/json';
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     const response = await fetch(targetUrl, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(req.body),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
-    const data = await response.json();
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      throw new Error(`后端返回非 JSON: ${text.substring(0, 200)}`);
+    }
+
     res.status(response.status).json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Proxy error:', error);
+    res.status(500).json({
+      error: '代理请求失败',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
   }
 }
